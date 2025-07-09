@@ -76,4 +76,10 @@ public class DeviceService {
 
     }
 
+    public Optional<DeviceStatus> getStatus(String deviceUuid, String userEmail){
+        return deviceRepository.findById(deviceUuid)
+                .filter(device -> device.getUser().getEmail().equals(userEmail))
+                .flatMap(deviceStatusRepository::findByDevice);
+    }
+
 }
