@@ -82,4 +82,16 @@ public class DeviceService {
                 .flatMap(deviceStatusRepository::findByDevice);
     }
 
+
+    public List<DeviceHistoryResponse> getDeviceHistory(String deviceUuid, String userEmail) {
+        Optional<Device> deviceOpt = deviceRepository.findById(deviceUuid);
+        if (deviceOpt.isEmpty() || !deviceOpt.get().getUser().getEmail().equals(userEmail)) {
+            return List.of();
+        }
+
+        return deviceHistoryRepository.findAllByDevice_DeviceUuidOrderByTimestampDesc(deviceUuid).stream()
+                .map(h -> new DeviceHistoryResponse(h.getStatus(), h.getTimestamp()))
+                .toList();
+    }
+
 }
