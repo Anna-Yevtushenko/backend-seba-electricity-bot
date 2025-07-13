@@ -13,6 +13,7 @@ import com.example.electricity_bot.repositories.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,16 +87,44 @@ public class DeviceService {
                 .flatMap(deviceStatusRepository::findByDevice);
     }
 
-
     public List<DeviceHistoryResponse> getDeviceHistory(String deviceUuid, String userEmail) {
         Optional<Device> deviceOpt = deviceRepository.findById(deviceUuid);
-        if (deviceOpt.isEmpty() || !deviceOpt.get().getUser().getEmail().equals(userEmail)) {
+
+        if (deviceOpt.isEmpty()) {
+            System.out.println("DEBUG: Device not found");
+            return List.of();
+        }
+
+        Device device = deviceOpt.get();
+        String ownerEmail = device.getUser().getEmail().trim();
+        System.out.println("DEBUG: device belongs to = " + ownerEmail);
+
+        if (!ownerEmail.equalsIgnoreCase(userEmail.trim())) {
+            System.out.println("DEBUG: Email mismatch — access denied");
             return List.of();
         }
 
         return deviceHistoryRepository.findAllByDevice_DeviceUuidOrderByTimestampDesc(deviceUuid).stream()
-                .map(h -> new DeviceHistoryResponse(h.getStatus(), h.getTimestamp()))
+                .map(h -> new DeviceHistoryResponse(
+                        h.getStatus(),
+                        h.getTimestamp().atZone(ZoneOffset.UTC).toInstant().toString()
+                ))
                 .toList();
     }
 
+    public List<DeviceWithStatus> getDevicesByUser(User user) {
+        return deviceRepository.findAllByUser(user).stream()
+                .map(device -> {
+                    Optional<DeviceStatus> statusOpt = deviceStatusRepository.findByDevice(device);
+                    String status = statusOpt.map(DeviceStatus::getStatus).orElse("OFF");
+                    String lastChange = statusOpt.map(s -> s.getTimestamp().toString()).orElse(null);
+                    return new DeviceWithStatus(
+                            device.getDeviceUuid(),
+                            device.getName(),
+                            status,
+                            lastChange
+                    );
+                })
+                .toList();
+    }
 }

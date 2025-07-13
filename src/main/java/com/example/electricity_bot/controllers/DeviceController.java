@@ -74,37 +74,41 @@ public class DeviceController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getDevices(@RequestParam(required = false) String uuid) {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+    public ResponseEntity<?> getDevices(
+            @RequestParam(required = false) String uuid,
+            @RequestParam(required = false) String email
+    ) {
+        String requesterEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        Optional<User> userOpt = userRepository.findByEmail(userEmail);
-        if (userOpt.isEmpty()) {
+        Optional<User> requesterOpt = userRepository.findByEmail(requesterEmail);
+        if (requesterOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
         }
-
-        User user = userOpt.get();
+        User requester = requesterOpt.get();
 
         if (uuid != null) {
-            List<DeviceHistoryResponse> history = deviceService.getDeviceHistory(uuid, user.getEmail());
+            List<DeviceHistoryResponse> history = deviceService.getDeviceHistory(uuid, requester.getEmail());
             if (history.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Device not found or access denied");
             }
             return ResponseEntity.ok(Map.of("history", history));
         }
 
-        List<DeviceWithStatus> devices = deviceService.getDevicesByUser(user);
+        if (email != null) {
+            if (!email.equals(requester.getEmail())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+
+            Optional<User> targetUserOpt = userRepository.findByEmail(email);
+            if (targetUserOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Target user not found");
+            }
+
+            List<DeviceWithStatus> devices = deviceService.getDevicesByUser(targetUserOpt.get());
+            return ResponseEntity.ok(Map.of("devices", devices));
+        }
+
+        List<DeviceWithStatus> devices = deviceService.getDevicesByUser(requester);
         return ResponseEntity.ok(Map.of("devices", devices));
     }
-
-    @GetMapping("/history/{deviceUuid}")
-    public ResponseEntity<?> getDeviceHistory(@PathVariable String deviceUuid) {
-        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        List<DeviceHistoryResponse> history = deviceService.getDeviceHistory(deviceUuid, userEmail);
-        if (history.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Device not found or access denied");
-        }
-        return ResponseEntity.ok(history);
-    }
-
 }
