@@ -33,17 +33,19 @@ public class DeviceService {
     }
 
 
-    public boolean registerDevice(String deviceUuid, String userEmail){
-        if(deviceRepository.existsById(deviceUuid)){
+    public boolean registerDevice(String deviceUuid, String deviceName, String userEmail) {
+        if (deviceRepository.existsById(deviceUuid)) {
             return false;
         }
+
         Optional<User> userOpt = userRepository.findByEmail(userEmail);
-        if(userOpt.isEmpty()){
+        if (userOpt.isEmpty()) {
             return false;
         }
 
         Device device = new Device();
         device.setDeviceUuid(deviceUuid);
+        device.setName(deviceName);
         device.setUser(userOpt.get());
         Device savedDevice = deviceRepository.save(device);
 
@@ -58,8 +60,10 @@ public class DeviceService {
         history.setStatus("OFF");
         history.setTimestamp(LocalDateTime.now());
         deviceHistoryRepository.save(history);
+
         return true;
     }
+
 
     public boolean deleteDevice(String deviceUuid, String userEmail){
         Optional<Device> deviceOpt = deviceRepository.findById(deviceUuid);

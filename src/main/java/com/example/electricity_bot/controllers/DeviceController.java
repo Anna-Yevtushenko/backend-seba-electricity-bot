@@ -1,11 +1,20 @@
 package com.example.electricity_bot.controllers;
+import com.example.electricity_bot.dto.DeviceHistoryResponse;
 import com.example.electricity_bot.dto.DeviceRegisterRequest;
-import com.example.electricity_bot.repositories.DeviceRepository;
+import com.example.electricity_bot.dto.DeviceStatusResponse;
+import com.example.electricity_bot.dto.DeviceWithStatus;
+import com.example.electricity_bot.model.User;
+import com.example.electricity_bot.repositories.UserRepository;
 import com.example.electricity_bot.services.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 @RestController
@@ -13,19 +22,89 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 public class DeviceController {
     private DeviceService deviceService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public DeviceController(DeviceService deviceService){
+    public DeviceController(DeviceService deviceService, UserRepository userRepository) {
         this.deviceService = deviceService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> registerDevice(@RequestBody DeviceRegisterRequest request){
-            boolean success = deviceService.registerDevice(request.getDeviceUuid() , request.getUserEmail());
-            if(success){
-                return ResponseEntity.ok().build();
-            }else {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Device already exist or user not found");
-            }
+    public ResponseEntity<String> registerDevice(@RequestBody DeviceRegisterRequest request) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean success = deviceService.registerDevice(
+                request.getDeviceUuid(),
+                request.getName(),
+                userEmail
+        );
+
+        if (success) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Device already exists or user not found");
+        }
     }
+
+
+    @DeleteMapping("/delete/{deviceUuid}")
+    public ResponseEntity<String> deleteDevice(@PathVariable String deviceUuid) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean deleted = deviceService.deleteDevice(deviceUuid, userEmail);
+
+        if (deleted) {
+            return ResponseEntity.ok("Device deleted");
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Device not found or access denied");
+        }
+    }
+
+    @GetMapping("/status/{deviceUuid}")
+    public ResponseEntity<?> getDeviceStatus(@PathVariable String deviceUuid) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return deviceService.getStatus(deviceUuid, userEmail)
+                .map(status-> new DeviceStatusResponse(
+                        status.getStatus(),
+                        status.getTimestamp().toString()
+                ))
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity
+                        .status(HttpStatus.FORBIDDEN)
+                        .body("Device not found or access denied"));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getDevices(@RequestParam(required = false) String uuid) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        Optional<User> userOpt = userRepository.findByEmail(userEmail);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+
+        User user = userOpt.get();
+
+        if (uuid != null) {
+            List<DeviceHistoryResponse> history = deviceService.getDeviceHistory(uuid, user.getEmail());
+            if (history.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Device not found or access denied");
+            }
+            return ResponseEntity.ok(Map.of("history", history));
+        }
+
+        List<DeviceWithStatus> devices = deviceService.getDevicesByUser(user);
+        return ResponseEntity.ok(Map.of("devices", devices));
+    }
+
+    @GetMapping("/history/{deviceUuid}")
+    public ResponseEntity<?> getDeviceHistory(@PathVariable String deviceUuid) {
+        String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        List<DeviceHistoryResponse> history = deviceService.getDeviceHistory(deviceUuid, userEmail);
+        if (history.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Device not found or access denied");
+        }
+        return ResponseEntity.ok(history);
+    }
+
 }

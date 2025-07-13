@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class DeviceRegisterRequest {
-    public String deviceUuid;
-    public String userEmail;
+    private String deviceUuid;
+    private String name;
 }

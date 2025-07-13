@@ -17,6 +17,9 @@ public class Device {
     @Column(name = "device_uuid")
     private String deviceUuid;
 
+    @Column(name = "name")
+    private String name;
+
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     private User user;
