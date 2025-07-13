@@ -1,11 +1,13 @@
 package com.example.electricity_bot.controllers;
 
 import com.example.electricity_bot.dto.LoginRequest;
+import com.example.electricity_bot.dto.UserProfileDto;
 import com.example.electricity_bot.model.User;
 import com.example.electricity_bot.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -13,8 +15,6 @@ import java.util.Optional;
 @CrossOrigin(origins = "*")
 @RestController
 public class UserController {
-
-
     private UserService userService;
 
     @Autowired
@@ -40,4 +40,21 @@ public class UserController {
         return ResponseEntity.ok(token.get());
     }
 
-}
+    @GetMapping("/user/me")
+    public ResponseEntity<?> getUserProfile(){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        return userService.getUserInfo(email)
+                .map(user -> {
+                    UserProfileDto dto = new UserProfileDto(
+                            user.getEmail(),
+                            user.getFirstName(),
+                            user.getLastName(),
+                            user.getGender(),
+                            user.getRole()
+                    );
+                    return ResponseEntity.ok(dto);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new UserProfileDto(null, null, null, null, null)));}
+    }
