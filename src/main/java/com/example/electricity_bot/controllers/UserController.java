@@ -48,6 +48,7 @@ public class UserController {
         return userService.getUserInfo(email)
                 .map(user -> {
                     UserProfileDto dto = new UserProfileDto(
+                            user.getId(),
                             user.getEmail(),
                             user.getFirstName(),
                             user.getLastName(),
@@ -57,7 +58,7 @@ public class UserController {
                     return ResponseEntity.ok(dto);
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new UserProfileDto(null, null, null, null, null)));}
+                        .body(new UserProfileDto(0, null, null, null, null, null)));}
 
 
     @PostMapping("/user/avatar")
