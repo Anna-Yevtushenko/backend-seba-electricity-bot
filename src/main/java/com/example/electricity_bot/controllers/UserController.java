@@ -2,6 +2,7 @@ package com.example.electricity_bot.controllers;
 
 import com.example.electricity_bot.dto.LoginRequest;
 import com.example.electricity_bot.dto.NewUser;
+import com.example.electricity_bot.dto.UpdateUserProfileRequest;
 import com.example.electricity_bot.dto.UserProfileDto;
 import com.example.electricity_bot.model.User;
 import com.example.electricity_bot.services.UserService;
@@ -48,6 +49,7 @@ public class UserController {
         return userService.getUserInfo(email)
                 .map(user -> {
                     UserProfileDto dto = new UserProfileDto(
+                            user.getId(),
                             user.getEmail(),
                             user.getFirstName(),
                             user.getLastName(),
@@ -57,8 +59,26 @@ public class UserController {
                     return ResponseEntity.ok(dto);
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new UserProfileDto(null, null, null, null, null)));}
+                        .body(new UserProfileDto(0, null, null, null, null, null)));}
 
+
+    @PutMapping("/user/me")
+    public ResponseEntity<?> updateUserProfile(@RequestBody UpdateUserProfileRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.updateUserProfile(email, request)
+                .map(user -> {
+                    UserProfileDto dto = new UserProfileDto(
+                            user.getId(),
+                            user.getEmail(),
+                            user.getFirstName(),
+                            user.getLastName(),
+                            user.getGender(),
+                            user.getRole()
+                    );
+                    return ResponseEntity.ok(dto);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
 
     @PostMapping("/user/avatar")
     public ResponseEntity<Void> updateAvatar(@RequestParam("avatar") MultipartFile file) {

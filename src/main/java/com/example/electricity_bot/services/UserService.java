@@ -1,5 +1,6 @@
 package com.example.electricity_bot.services;
 import com.example.electricity_bot.dto.NewUser;
+import com.example.electricity_bot.dto.UpdateUserProfileRequest;
 import com.example.electricity_bot.model.User;
 import com.example.electricity_bot.repositories.UserRepository;
 import com.example.electricity_bot.services.JwtService;
@@ -121,5 +122,17 @@ public class UserService {
             return userRepository.save(user);
         });
     }
+
+    public Optional<User> updateUserProfile(String email, UpdateUserProfileRequest request) {
+        return userRepository.findByEmail(email).map(user -> {
+            if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
+            if (request.getLastName() != null) user.setLastName(request.getLastName());
+            if (request.getGender() != null) user.setGender(request.getGender());
+            if (request.getTimezone() != null) user.setTimezone(request.getTimezone());
+
+            return userRepository.save(user);
+        });
+    }
+
 
 }
