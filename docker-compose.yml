@@ -28,5 +28,18 @@ services:
     networks:
       - electricity-network
 
+  frontend:
+    build:
+      context: ../frontend-seba-electricity-bot/electricity-bot/
+      dockerfile: Dockerfile
+    container_name: electricity-frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - electricity-network
+
 networks:
   electricity-network:
