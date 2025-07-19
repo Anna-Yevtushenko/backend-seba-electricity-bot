@@ -57,12 +57,13 @@ public class UserController {
                             user.getFirstName(),
                             user.getLastName(),
                             user.getGender(),
-                            user.getRole()
+                            user.getRole(),
+                            user.getTimezone()
                     );
                     return ResponseEntity.ok(dto);
                 })
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new UserProfileDto(0, null, null, null, null, null)));}
+                        .body(new UserProfileDto(0, null, null, null, null, null,null)));}
 
 
     @PutMapping("/user/me")
