@@ -4,6 +4,7 @@ import com.example.electricity_bot.dto.UpdateUserProfileRequest;
 import com.example.electricity_bot.model.User;
 import com.example.electricity_bot.repositories.UserRepository;
 import com.example.electricity_bot.services.JwtService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Service
 public class UserService {
     private final UserRepository userRepository;
@@ -30,16 +32,16 @@ public class UserService {
     }
 
     public Optional<String> register(User user){
-        System.out.println("Checking if email exists: " + user.getEmail());
+        log.info("Checking if email exists: " + user.getEmail());
 
         if(userRepository.findByEmail(user.getEmail()).isPresent()){
-            System.out.println("Email already exists in DB: " + user.getEmail());
+            log.info("Email already exists in DB: " + user.getEmail());
             return Optional.empty();
         }
         String hashedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(hashedPassword);
         User savedUser = userRepository.save(user);
-        System.out.println("User registered: " + savedUser.getEmail());
+        log.info("User registered: " + savedUser.getEmail());
         String token = jwtService.generateToken(savedUser);
         return Optional.of(token);
     }
