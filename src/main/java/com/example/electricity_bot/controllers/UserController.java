@@ -1,11 +1,13 @@
 package com.example.electricity_bot.controllers;
 
+import com.example.electricity_bot.dto.AvatarDto;
 import com.example.electricity_bot.dto.LoginRequest;
 import com.example.electricity_bot.dto.NewUser;
 import com.example.electricity_bot.dto.UpdateUserProfileRequest;
 import com.example.electricity_bot.dto.UserProfileDto;
 import com.example.electricity_bot.model.User;
 import com.example.electricity_bot.services.UserService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -14,7 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.Optional;
-
+@Slf4j
 @CrossOrigin(origins = "*")
 @RestController
 public class UserController {
@@ -27,6 +29,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity register(@RequestBody User user){
+        log.info("in register controller");
         Optional<String> token = userService.register(user);
         if(token.isEmpty()){
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already in use");
@@ -81,17 +84,25 @@ public class UserController {
     }
 
     @PostMapping("/user/avatar")
-    public ResponseEntity<Void> updateAvatar(@RequestParam("avatar") MultipartFile file) {
+    public ResponseEntity<?> updateAvatar(@RequestParam("avatar") MultipartFile file) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println(email+ "----------------------------------");
-        Optional<User> userOpt = userService.updateAvatar(email, file);
 
-        if (userOpt.isPresent()) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return userService.updateAvatar(email, file)
+                .map(user -> {
+                    AvatarDto dto = new AvatarDto(
+                            user.getId(),
+                            user.getFirstName(),
+                            user.getLastName(),
+                            user.getEmail(),
+                            user.getGender(),
+                            user.getTimezone(),
+                            user.getAvatar()
+                    );
+                    return ResponseEntity.ok(dto);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
+
 
     @GetMapping("/user/avatar")
     public ResponseEntity<byte[]> getOwnAvatar() {
