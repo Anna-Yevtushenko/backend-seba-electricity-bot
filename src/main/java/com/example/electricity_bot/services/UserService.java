@@ -130,7 +130,7 @@ public class UserService {
             if (request.getFirstName() != null) user.setFirstName(request.getFirstName());
             if (request.getLastName() != null) user.setLastName(request.getLastName());
             if (request.getGender() != null) user.setGender(request.getGender());
-            if (request.getTimezone() != null) user.setTimezone(request.getTimezone());
+            if (request.getTimeZone() != null) user.setTimezone(request.getTimeZone());
 
             return userRepository.save(user);
         });

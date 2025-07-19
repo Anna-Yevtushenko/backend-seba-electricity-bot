@@ -4,7 +4,7 @@ public class UpdateUserProfileRequest {
     private String firstName;
     private String lastName;
     private String gender;
-    private String timezone;
+    private String timeZone;
 
     public String getFirstName() {
         return firstName;
@@ -18,7 +18,7 @@ public class UpdateUserProfileRequest {
         return gender;
     }
 
-    public String getTimezone() {
-        return timezone;
+    public String getTimeZone() {
+        return timeZone;
     }
 }
