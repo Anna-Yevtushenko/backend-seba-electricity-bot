@@ -34,6 +34,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/",
+                                "/index.html",
                                 "/register",
                                 "/login",
                                 "/user/me",
@@ -45,7 +47,8 @@ public class SecurityConfig {
                                 "/devices/get-by-user",
                                 "/devices/status/**",
                                 "/devices/history/**",
-                                "/status/update").permitAll()
+                                "/status/update",
+                                "/home", "/settings", "/history", "/static/**" ).permitAll()
                         .requestMatchers("/devices", "/devices/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
