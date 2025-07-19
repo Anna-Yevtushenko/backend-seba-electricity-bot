@@ -76,7 +76,8 @@ public class UserController {
                             user.getFirstName(),
                             user.getLastName(),
                             user.getGender(),
-                            user.getRole()
+                            user.getRole(),
+                            user.getTimezone()
                     );
                     return ResponseEntity.ok(dto);
                 })
